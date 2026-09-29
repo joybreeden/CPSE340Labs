@@ -10,6 +10,13 @@
 #define WARNING_LOW_mC 18000
 #define WARNING_HIGH_mC 30000
 #define FAILURE_CODE_mC (-999000)
+
+typedef unsigned int sensor_flags_t;
+
+#define SENSOR_FLAG_VALID       (1U << 0)
+#define SENSOR_FLAG_WARNING     (1U << 1)
+#define SENSOR_FLAG_FAILURE     (1U << 2)
+#define SENSOR_FLAG_IN_STATS    (1U << 3)
 typedef enum {
     MODE_NORMAL,
     MODE_WARNING,
@@ -152,8 +159,32 @@ static const char *status_text(sensor_status_t status)
     return "UNKNOWN";
 }
 
+static sensor_flags_t determine_flags(int32_t reading)
+{
+    sensor_flags_t flags = 0U;
+    if(classify_reading(reading)== STATUS_FAILURE){
+        flags += SENSOR_FLAG_FAILURE;
+    }else{
+        flags += SENSOR_FLAG_IN_STATS;
+        flags += SENSOR_FLAG_VALID;
+    }
+    if(classify_reading(reading)== STATUS_WARNING){
+        flags += SENSOR_FLAG_WARNING;
+    }
+    
+    /* Check the failure sentinel before checking numeric thresholds. */
+    /* Set or clear the appropriate bits according to the rules below. */
 
-
+    return flags;
+}
+//For testing purposes only
+int main(){
+    int32_t reading;
+    printf("Enter test reading: ");
+    scanf("%d",&reading);
+    printf("%x", determine_flags(reading));
+}
+/*
 int main(int argc, char *argv[]){
     size_t ok = 0;
     sensor_mode_t mode;
@@ -164,6 +195,7 @@ int main(int argc, char *argv[]){
     double min, max;
     double temp;
     int32_t tempu;
+    //checks if theres an issue with the function declaration 
     if(argc > 3 || argv[1]== NULL){
         printf("failure args");
         return 0;
@@ -227,4 +259,4 @@ int main(int argc, char *argv[]){
 
   printf("Summary: samples = %lld, valid=%lld, ok=%lld, warning=%lld, failure=%lld\n min = %fC, max = %fC, average = %fC", count,count - failure, ok,warning,failure,min,max,ave);
 
-  }
+  }*/
