@@ -178,15 +178,17 @@ static sensor_flags_t determine_flags(int32_t reading)
     return flags;
 }
 //For testing purposes only
+/*
 int main(){
     int32_t reading;
     printf("Enter test reading: ");
     scanf("%d",&reading);
     printf("%x", determine_flags(reading));
-}
-/*
+}*/
+
 int main(int argc, char *argv[]){
-    size_t ok = 0;
+    size_t valid = 0;
+    sensor_flags_t flags;
     sensor_mode_t mode;
     size_t count = 10;
     size_t warning = 0;
@@ -194,7 +196,7 @@ int main(int argc, char *argv[]){
     double ave = 0;
     double min, max;
     double temp;
-    int32_t tempu;
+    int32_t reading;
     //checks if theres an issue with the function declaration 
     if(argc > 3 || argv[1]== NULL){
         printf("failure args");
@@ -212,9 +214,10 @@ int main(int argc, char *argv[]){
     }
     for(size_t i = 0; i < count; i++){
          printf("sample = %lld ",i+1);
-        tempu = generate_reading(mode,i);
-        if(tempu != FAILURE_CODE_mC){
-            temp = to_celsius(tempu);
+        reading = generate_reading(mode,i);
+        flags = determine_flags(reading);
+        if((flags & SENSOR_FLAG_FAILURE) != SENSOR_FLAG_FAILURE){
+            temp = to_celsius(reading);
             printf("temperature = %fC",temp);
          }else{
              printf("temperature = Null");
@@ -222,41 +225,36 @@ int main(int argc, char *argv[]){
          }
 
             
-         printf( " Status =%s\n", status_text(classify_reading(generate_reading(mode,i))));
-        switch (classify_reading(base_reading(i)))
-        {
-        case STATUS_FAILURE:
+         printf( " Status =%s, Flags =0x%02x\n", status_text(classify_reading(generate_reading(mode,i))),flags);
+         
+        
+        if((flags & SENSOR_FLAG_FAILURE) == SENSOR_FLAG_FAILURE){
             failure++;
-            continue;
-            break;
-        case STATUS_WARNING:
+        }
+        if((flags & SENSOR_FLAG_WARNING) == SENSOR_FLAG_WARNING){
             warning++;
-            break;
-        default:
-            ok++;
-            break;
+            printf("%x",flags & SENSOR_FLAG_WARNING);
         }
-        if(temp != FAILURE_CODE_mC){
+        if((flags & SENSOR_FLAG_VALID) == SENSOR_FLAG_VALID){
+            valid++;
+        }
+        if((flags & SENSOR_FLAG_FAILURE) != SENSOR_FLAG_FAILURE){
             ave += temp;
-        }
-        if(i == 0){
-            if(temp != FAILURE_CODE_mC){
-             min = temp;
+            if(i == 0){ 
+                min = temp;
                 max = temp;
             }
-        }else{
+        }   else{
             if(temp < min){
-                if(temp != FAILURE_CODE_mC)
                  min = temp;
             }
             if(temp > max){
-                if(temp != FAILURE_CODE_mC)
                     max = temp;
             }
         }
     }
     ave =  ave / (double)count ;
 
-  printf("Summary: samples = %lld, valid=%lld, ok=%lld, warning=%lld, failure=%lld\n min = %fC, max = %fC, average = %fC", count,count - failure, ok,warning,failure,min,max,ave);
+  printf("Summary: samples = %lld, valid=%lld, ok=%lld, warning=%lld, failure=%lld\n min = %fC, max = %fC, average = %fC", count,valid,valid - warning,warning,failure,min,max,ave);
 
-  }*/
+  }
